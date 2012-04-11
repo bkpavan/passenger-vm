@@ -1,0 +1,8 @@
+# Production Setup
+## Apache
+## Passenger
+## MySQL
+## Ruby 1.9.2
+## Rails 3.1
+## Elastic Search
+## ? Redis (http://reiddraper.com/first-chef-recipe/)
