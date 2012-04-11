@@ -1,3 +1,5 @@
+Run ./scripts/bootstrap.sh for APP_ROOT
+#
 # Production Setup
 ## Apache
 ## Passenger

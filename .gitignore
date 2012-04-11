@@ -1,2 +1,10 @@
 *.DS_Store
 .vagrant
+cookbooks/apache2
+cookbooks/build-essential
+cookbooks/git
+cookbooks/mysql
+cookbooks/openssl
+cookbooks/passenger_apache2
+cookbooks/runit
+cookbooks/yum
