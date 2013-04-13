@@ -1,73 +1,82 @@
+# encoding: utf-8
+
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-BASE_PACKAGES = %w[git mysql]
-
 Vagrant::Config.run do |config|
-  # All Vagrant configuration is done here. The most common configuration
-  # options are documented and commented below. For a complete reference,
-  # please see the online documentation at vagrantup.com.
 
-  # Every Vagrant virtual environment requires a box to build off of.
-  config.vm.box = "centos-5"
-  # config.vm.box = "lucid32"
-
-  # The url from where the 'config.vm.box' box will be fetched if it
-  # doesn't already exist on the user's system.
-  config.vm.box_url = "http://opscode-vagrant-boxes.s3.amazonaws.com/centos5-gems.box"
-  # config.vm.box_url = "http://files.vagrantup.com/lucid32.box"
-
-  # Boot with a GUI so you can see the screen. (Default is headless)
-  # config.vm.boot_mode = :gui
-
-  # Assign this VM to a host-only network IP, allowing you to access it
-  # via the IP. Host-only networks can talk to the host machine as well as
-  # any other machines on the same network, but cannot be accessed (through this
-  # network interface) by any external networks.
-  config.vm.network :hostonly, "192.168.33.10"
-
-  # Assign this VM to a bridged network, allowing you to connect directly to a
-  # network using the host's network device. This makes the VM appear as another
-  # physical device on your network.
-  # config.vm.network :bridged
-
-  # Forward a port from the guest to the host, which allows for outside
-  # computers to access the VM, whereas host only networking does not.
-  config.vm.forward_port 80, 3080
-
-  # Share an additional folder to the guest VM. The first argument is
-  # an identifier, the second is the path on the guest to mount the
-  # folder, and the third is the path on the host to the actual folder.
-  # config.vm.share_folder "v-data", "/vagrant_data", "../data"
-
-  # Enable provisioning with chef solo, specifying a cookbooks path, roles
-  # path, and data_bags path (all relative to this Vagrantfile), and adding 
-  # some recipes and/or roles.
+  config.vm.box = "precise64"
+  config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+  config.vm.provision :shell, :inline => "curl -L https://www.opscode.com/chef/install.sh | bash"
+  config.ssh.forward_agent = true
 
   config.vm.provision :chef_solo do |chef|
-    # chef.log_level = :debug
     chef.cookbooks_path = ["cookbooks"]
-    # chef.roles_path = "../my-recipes/roles"
-    # chef.data_bags_path = "../my-recipes/data_bags"
-    BASE_PACKAGES.concat(%w[mysql::server]).each do |recipe|
-      chef.add_recipe recipe
-    end 
-    # chef.add_recipe     "apt"
-    # chef.add_recipe "apache2"
-    # chef.add_recipe "passenger_apache2"
-    # chef.add_recipe     "git"
-    # chef.add_recipe "mysql"
-    # chef.add_recipe "ruby"
-    # chef.add_recipe "rvm"
-    # chef.add_recipe "Elastic Search"
-
-    # chef.add_role "web"
-
-    # You may also specify custom JSON attributes:
+    chef.add_recipe :apt
+    chef.add_recipe 'redis'
+    chef.add_recipe 'apache2'
+    chef.add_recipe 'git'
+    chef.add_recipe 'rvm'
+    chef.add_recipe 'mysql::server'
     chef.json = {
-      :mysql => {:server_root_password => "password"},
-      :rvm => { :rubies  => [{ :name => "1.9.2" }]}
+      :redis  => {
+        :bind        => "127.0.0.1",
+        :port        => "6379",
+        :config_path => "/etc/redis/redis.conf",
+        :daemonize   => "yes",
+        :timeout     => "300",
+        :loglevel    => "notice"
+      },
+      :apache => {
+        :dir               => "/etc/apache2",
+        :log_dir           => "/var/log/apache2",
+        :error_log         => "error.log",
+        :user              => "www-data",
+        :group             => "www-data",
+        :binary            => "/usr/sbin/apache2",
+        :cache_dir         => "/var/cache/apache2",
+        :pid_file          => "/var/run/apache2.pid",
+        :lib_dir           => "/usr/lib/apache2",
+        :listen_ports      => [
+          "80"
+        ],
+        :contact           => "ops@example.com",
+        :timeout           => "300",
+        :keepalive         => "On",
+        :keepaliverequests => "100",
+        :keepalivetimeout  => "5"
+      },
+      :git    => {
+        :prefix => "/usr/local"
+      },
+      :rbenv  => {
+        :user_installs => [
+          {
+            :user   => "vagrant",
+            :rubies => [
+              "1.9.3-p392",
+              "2.0.0-p0"
+            ],
+            :global => "1.9.3-p392"
+          }
+        ]
+      },
+      :mysql  => {
+        :server_root_password   => "password",
+        :server_repl_password   => "password",
+        :server_debian_password => "password",
+        :service_name           => "mysql",
+        :basedir                => "/usr",
+        :data_dir               => "/var/lib/mysql",
+        :root_group             => "root",
+        :mysqladmin_bin         => "/usr/bin/mysqladmin",
+        :mysql_bin              => "/usr/bin/mysql",
+        :conf_dir               => "/etc/mysql",
+        :confd_dir              => "/etc/mysql/conf.d",
+        :socket                 => "/var/run/mysqld/mysqld.sock",
+        :pid_file               => "/var/run/mysqld/mysqld.pid",
+        :grants_path            => "/etc/mysql/grants.sql"
+      }
     }
   end
-
 end
